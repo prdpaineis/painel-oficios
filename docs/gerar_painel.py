@@ -200,11 +200,11 @@ def main():
     print(f'Gravado {caminho} com {len(saida)} oficios e {len(subsidios_saida)} subsidios em aberto.')
 
     # Versao de arquivo unico (abre com duplo clique, sem servidor).
-    with open(os.path.join(pasta, 'painel.html'), encoding='utf-8') as f:
+    with open(os.path.join(pasta, 'index.html'), encoding='utf-8') as f:
         html = f.read()
     tag = '<script src="oficios.js" onerror="document.getElementById(\'erro\').style.display=\'block\'"></script>'
     if tag not in html:
-        sys.exit('Nao achei a tag <script src="oficios.js"> em painel.html')
+        sys.exit('Nao achei a tag <script src="oficios.js"> em index.html')
     inline = '<script>\n' + dados_js.replace('</', '<\\/') + '</script>'
     completo = os.path.join(pasta, 'painel_oficios_completo.html')
     with open(completo, 'w', encoding='utf-8') as f:
