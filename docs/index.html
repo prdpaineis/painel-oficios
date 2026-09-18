@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Ofícios</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root {
+    --bg: #f3f5f8;
+    --panel: #ffffff;
+    --panel-alt: #e8eef5;
+    --border: #d6dee7;
+    --text: #17212c;
+    --text-dim: #5a6978;
+    --accent: #1f6bb0;
+    --chip: #e3e9f0;
+    --ok: #17804a;
+    --warn: #b86e00;
+    --danger: #c42f2f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f151c;
+      --panel: #17202a;
+      --panel-alt: #1f2a36;
+      --border: #2b3744;
+      --text: #e3e9ef;
+      --text-dim: #8e9bab;
+      --accent: #5aa9e6;
+      --chip: #2b3744;
+      --ok: #3fbf76;
+      --warn: #f0a63a;
+      --danger: #f06262;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f151c;
+    --panel: #17202a;
+    --panel-alt: #1f2a36;
+    --border: #2b3744;
+    --text: #e3e9ef;
+    --text-dim: #8e9bab;
+    --accent: #5aa9e6;
+    --chip: #2b3744;
+    --ok: #3fbf76;
+    --warn: #f0a63a;
+    --danger: #f06262;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Public Sans", "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .kpi .valor, .num { font-variant-numeric: tabular-nums; }
+  .kpi .valor { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (max-width: 600px) {
+    header, .tabs, .sla-toggle, section, .toolbar, .content { padding-left: 16px !important; padding-right: 16px !important; }
+    .kpi { min-width: 130px; }
+  }
+  header {
+    padding: 20px 24px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { margin: 0 0 4px; font-size: 20px; }
+  header p { margin: 0; color: var(--text-dim); font-size: 13px; }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 12px 24px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    padding: 8px 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+  .tab.active { background: var(--panel-alt); color: var(--text); border-color: var(--accent); }
+  .tab .count { color: var(--text-dim); margin-left: 4px; }
+
+  .sla-toggle {
+    display: flex;
+    gap: 6px;
+    padding: 14px 24px 0;
+  }
+  .pill {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .pill.active { border-color: var(--accent); color: var(--text); background: var(--panel-alt); }
+  .pill.fora.active { border-color: var(--danger); color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+
+  section { padding: 16px 24px; }
+  section h2 { font-size: 14px; margin: 0 0 12px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+
+  .kpis { display: flex; gap: 12px; flex-wrap: wrap; }
+  .kpi {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    min-width: 150px;
+    flex: 1;
+  }
+  .kpi .valor { font-size: 26px; font-weight: 700; line-height: 1.2; }
+  .kpi .rotulo { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+  .kpi.danger .valor { color: var(--danger); }
+  .kpi.warn .valor { color: var(--warn); }
+
+  .grid-2 { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .mini-table th { text-align: left; color: var(--text-dim); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .mini-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .mini-table .barra-bg { background: var(--panel-alt); border-radius: 4px; height: 6px; overflow: hidden; margin-top: 4px; }
+  .mini-table .barra { background: var(--accent); height: 100%; }
+
+  .chart { display: flex; align-items: flex-end; gap: 14px; height: 185px; padding: 8px 0; }
+  .chart .mes { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; flex: 1; height: 100%; }
+  .chart .barras { display: flex; align-items: flex-end; gap: 3px; height: 120px; }
+  .chart .barra { width: 14px; border-radius: 3px 3px 0 0; }
+  .chart .barra.recebidos { background: var(--accent); }
+  .chart .barra.respondidos { background: var(--ok); }
+  .chart .rotulo-mes { font-size: 11px; color: var(--text-dim); margin-top: 6px; }
+  .legenda { display: flex; gap: 16px; font-size: 12px; color: var(--text-dim); margin-top: 8px; }
+  .legenda span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+  .dot.recebidos { background: var(--accent); }
+  .dot.respondidos { background: var(--ok); }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 4px 24px 14px;
+    align-items: center;
+  }
+  .toolbar input, .toolbar select {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .toolbar input { flex: 1; min-width: 200px; }
+
+  table.principal { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.principal thead th {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim);
+    font-weight: 500;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  table.principal tbody td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  table.principal tbody tr:hover { background: var(--panel); }
+  .muted { color: var(--text-dim); }
+  .clamp { max-width: 320px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .badge-default { background: var(--chip); color: var(--text); }
+  .badge-ok { background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+  .badge-warn { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+  .badge-danger { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, transparent); }
+
+  #vazio { padding: 40px 24px; color: var(--text-dim); text-align: center; }
+  #erro { padding: 40px 24px; color: var(--danger); text-align: center; }
+  .content { overflow-x: auto; padding: 0 24px 24px; }
+  .sem-dado { color: var(--text-dim); font-size: 13px; padding: 8px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Painel de Ofícios</h1>
+  <p id="subtitulo">carregando…</p>
+</header>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="sla-toggle" id="slaToggle">
+  <div class="pill active" data-sla="">Todos</div>
+  <div class="pill" data-sla="dentro">Dentro do SLA</div>
+  <div class="pill fora" data-sla="fora">Fora do SLA (vencido)</div>
+</div>
+
+<section>
+  <div class="kpis" id="kpis"></div>
+</section>
+
+<section>
+  <div class="grid-2">
+    <div>
+      <h2>Recebidos × Respondidos por mês</h2>
+      <div class="chart" id="grafico"></div>
+      <div class="legenda">
+        <span><i class="dot recebidos"></i>Recebidos</span>
+        <span><i class="dot respondidos"></i>Respondidos</span>
+      </div>
+    </div>
+    <div>
+      <h2>Ativos por situação</h2>
+      <table class="mini-table" id="tabelaSituacao"><tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Subsídios pendentes por área</h2>
+  <table class="mini-table" id="tabelaAreas">
+    <thead><tr><th>Área</th><th>Pendentes</th><th>Tempo médio pendente</th><th>Mais antigo</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <div class="sem-dado" id="areasVazio" style="display:none">Nenhum subsídio pendente para este cliente/filtro.</div>
+</section>
+
+<section style="padding-bottom:0">
+  <h2>Detalhe dos ofícios</h2>
+</section>
+<div class="toolbar">
+  <input type="text" id="busca" placeholder="Buscar por número, processo, órgão, resumo do pedido…">
+  <select id="filtroSituacao"><option value="">Todas as situações</option></select>
+</div>
+
+<div class="content">
+  <table class="principal" id="tabela">
+    <thead>
+      <tr>
+        <th data-key="entrada">Entrada</th>
+        <th data-key="numeroOficio">Nº Ofício</th>
+        <th data-key="numeroProcesso">Processo</th>
+        <th data-key="orgaoEmissor">Órgão</th>
+        <th data-key="situacao">Situação</th>
+        <th data-key="prazoResposta">Prazo</th>
+        <th data-key="resumoPedido">O que foi pedido</th>
+        <th data-key="tipoResposta">O que foi respondido</th>
+        <th data-key="responsavel">Responsável</th>
+      </tr>
+    </thead>
+    <tbody id="corpo"></tbody>
+  </table>
+  <div id="vazio" style="display:none">Nenhum ofício encontrado com esse filtro.</div>
+  <div id="erro" style="display:none">
+    Não achei <code>oficios.js</code>. Rode <code>python gerar_painel.py</code> primeiro
+    (precisa de uma chave com acesso ao módulo jur_oficios — ver <code>.env.example</code>).
+  </div>
+</div>
+
+<script src="oficios.js" onerror="document.getElementById('erro').style.display='block'"></script>
+<script>
+(function () {
+  if (typeof OFICIOS === 'undefined') return;
+  const TODOS_SUBSIDIOS = typeof SUBSIDIOS === 'undefined' ? [] : SUBSIDIOS;
+
+  const ESTADOS_ATIVOS_EXCLUIDOS = ['Respondido', 'Encerramento', 'Sem Relacao', 'Erro de Processamento'];
+
+  const estado = { cliente: null, sla: '', situacao: '', busca: '', ordem: 'entrada', ordemAsc: false };
+
+  const PRAZO_BADGE = {
+    'Vencido': 'badge-danger',
+    'Vence hoje': 'badge-danger',
+    'Vence em ate 3 dias': 'badge-warn',
+    'No prazo': 'badge-ok',
+    'Sem prazo': 'badge-default',
+  };
+  const SITUACAO_BADGE = {
+    'Respondido': 'badge-ok',
+    'Encerramento': 'badge-ok',
+    'Erro de Processamento': 'badge-danger',
+    'Sem Relacao': 'badge-default',
+  };
+
+  function clientes() {
+    return [...new Set(OFICIOS.map(o => o.cliente))].sort();
+  }
+
+  function formatarData(iso) {
+    if (!iso) return '—';
+    const [data] = iso.split(' ');
+    const [ano, mes, dia] = data.split('-');
+    return `${dia}/${mes}/${ano}`;
+  }
+
+  function badge(texto, mapa) {
+    if (!texto) return '<span class="muted">—</span>';
+    const classe = mapa && mapa[texto] ? mapa[texto] : 'badge-default';
+    return `<span class="badge ${classe}">${texto}</span>`;
+  }
+
+  function foraDoSla(o) {
+    return o.situacaoPrazo === 'Vencido';
+  }
+
+  function passaSla(o) {
+    if (estado.sla === 'dentro') return !foraDoSla(o);
+    if (estado.sla === 'fora') return foraDoSla(o);
+    return true;
+  }
+
+  function montarAbas() {
+    const tabs = document.getElementById('tabs');
+    const lista = clientes();
+    if (estado.cliente === null) estado.cliente = lista[0] || null;
+    tabs.innerHTML = lista.map(c => {
+      const n = OFICIOS.filter(o => o.cliente === c).length;
+      const ativo = c === estado.cliente ? 'active' : '';
+      return `<div class="tab ${ativo}" data-cliente="${c}">${c}<span class="count">${n}</span></div>`;
+    }).join('');
+    tabs.querySelectorAll('.tab').forEach(el => {
+      el.addEventListener('click', () => { estado.cliente = el.dataset.cliente; render(); });
+    });
+  }
+
+  function montarSlaToggle() {
+    document.querySelectorAll('#slaToggle .pill').forEach(el => {
+      el.classList.toggle('active', el.dataset.sla === estado.sla);
+    });
+  }
+
+  function montarFiltroSituacao() {
+    const doCliente = OFICIOS.filter(o => o.cliente === estado.cliente).filter(passaSla);
+    const situacoes = [...new Set(doCliente.map(o => o.situacao).filter(Boolean))].sort();
+    const sel = document.getElementById('filtroSituacao');
+    const valorAtual = estado.situacao;
+    sel.innerHTML = '<option value="">Todas as situações</option>' +
+      situacoes.map(s => `<option value="${s}">${s}</option>`).join('');
+    sel.value = situacoes.includes(valorAtual) ? valorAtual : '';
+    estado.situacao = sel.value;
+  }
+
+  function ofcCliente() {
+    return OFICIOS.filter(o => o.cliente === estado.cliente).filter(passaSla);
+  }
+
+  function subsidiosCliente() {
+    const ids = new Set(ofcCliente().map(o => o.id));
+    return TODOS_SUBSIDIOS.filter(s => ids.has(s.oficioId));
+  }
+
+  function linhasTabela() {
+    const busca = estado.busca.trim().toLowerCase();
+    return ofcCliente()
+      .filter(o => !estado.situacao || o.situacao === estado.situacao)
+      .filter(o => {
+        if (!busca) return true;
+        const alvo = [o.numeroOficio, o.numeroProcesso, o.orgaoEmissor, o.resumoPedido, o.nome, o.referenciaInterna]
+          .filter(Boolean).join(' ').toLowerCase();
+        return alvo.includes(busca);
+      })
+      .sort((a, b) => {
+        const va = a[estado.ordem] || '';
+        const vb = b[estado.ordem] || '';
+        const cmp = String(va).localeCompare(String(vb));
+        return estado.ordemAsc ? cmp : -cmp;
+      });
+  }
+
+  function inicioMesAtual() {
+    const hoje = new Date();
+    return new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  }
+
+  function montarKpis() {
+    const dados = ofcCliente();
+    const total = dados.length;
+    const inicioMes = inicioMesAtual();
+    const entradosNoMes = dados.filter(o => o.entrada && new Date(o.entrada.replace(' ', 'T')) >= inicioMes).length;
+    const ativos = dados.filter(o => !ESTADOS_ATIVOS_EXCLUIDOS.includes(o.situacao));
+    const subsidiosDoCliente = subsidiosCliente();
+    const vencidos = dados.filter(foraDoSla).length;
+
+    document.getElementById('kpis').innerHTML = `
+      <div class="kpi"><div class="valor">${total}</div><div class="rotulo">Ofícios (total)</div></div>
+      <div class="kpi"><div class="valor">${entradosNoMes}</div><div class="rotulo">Entrados neste mês</div></div>
+      <div class="kpi"><div class="valor">${ativos.length}</div><div class="rotulo">Ativos (não respondidos)</div></div>
+      <div class="kpi ${vencidos ? 'danger' : ''}"><div class="valor">${vencidos}</div><div class="rotulo">Fora do SLA (vencidos)</div></div>
+      <div class="kpi ${subsidiosDoCliente.length ? 'warn' : ''}"><div class="valor">${subsidiosDoCliente.length}</div><div class="rotulo">Subsídios pendentes</div></div>
+    `;
+  }
+
+  function montarSituacoes() {
+    const dados = ofcCliente().filter(o => !ESTADOS_ATIVOS_EXCLUIDOS.includes(o.situacao));
+    const porSituacao = {};
+    dados.forEach(o => { porSituacao[o.situacao] = (porSituacao[o.situacao] || 0) + 1; });
+    const maximo = Math.max(1, ...Object.values(porSituacao));
+    const linhas = Object.entries(porSituacao).sort((a, b) => b[1] - a[1]);
+    const tbody = document.querySelector('#tabelaSituacao tbody');
+    if (!linhas.length) {
+      tbody.innerHTML = '<tr><td class="sem-dado">Nenhum ofício ativo para este cliente/filtro.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = linhas.map(([situacao, n]) => `
+      <tr>
+        <td>${situacao}<div class="barra-bg"><div class="barra" style="width:${(n / maximo * 100).toFixed(0)}%"></div></div></td>
+        <td style="text-align:right">${n}</td>
+      </tr>
+    `).join('');
+  }
+
+  function ultimosMeses(qtd) {
+    const meses = [];
+    const hoje = new Date();
+    for (let i = qtd - 1; i >= 0; i--) {
+      const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+      meses.push({ ano: d.getFullYear(), mes: d.getMonth(), rotulo: d.toLocaleDateString('pt-BR', { month: 'short' }) });
+    }
+    return meses;
+  }
+
+  function mesmoMes(iso, ano, mes) {
+    if (!iso) return false;
+    const d = new Date(iso.replace(' ', 'T'));
+    return d.getFullYear() === ano && d.getMonth() === mes;
+  }
+
+  function montarGrafico() {
+    const dados = ofcCliente();
+    const meses = ultimosMeses(6);
+    const contagens = meses.map(m => ({
+      ...m,
+      recebidos: dados.filter(o => mesmoMes(o.entrada, m.ano, m.mes)).length,
+      respondidos: dados.filter(o => mesmoMes(o.enviadoEm, m.ano, m.mes)).length,
+    }));
+    const maximo = Math.max(1, ...contagens.map(c => Math.max(c.recebidos, c.respondidos)));
+    document.getElementById('grafico').innerHTML = contagens.map(c => `
+      <div class="mes">
+        <div class="barras">
+          <div class="barra recebidos" style="height:${(c.recebidos / maximo * 120).toFixed(0)}px" title="${c.recebidos} recebidos"></div>
+          <div class="barra respondidos" style="height:${(c.respondidos / maximo * 120).toFixed(0)}px" title="${c.respondidos} respondidos"></div>
+        </div>
+        <div class="rotulo-mes">${c.rotulo}</div>
+        <div class="rotulo-mes num"><span style="color:var(--accent)">${c.recebidos}</span> / <span style="color:var(--ok)">${c.respondidos}</span></div>
+      </div>
+    `).join('');
+  }
+
+  function diasDesde(iso) {
+    if (!iso) return null;
+    const d = new Date(iso.replace(' ', 'T') + 'Z');
+    return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+  }
+
+  function montarAreasPendentes() {
+    const subsidios = subsidiosCliente();
+    const porArea = {};
+    subsidios.forEach(s => {
+      const area = s.area || 'Sem área definida';
+      const dias = diasDesde(s.solicitadoEm || s.criadoEm) || 0;
+      if (!porArea[area]) porArea[area] = { area, n: 0, somaDias: 0, maiorDias: 0 };
+      porArea[area].n += 1;
+      porArea[area].somaDias += dias;
+      porArea[area].maiorDias = Math.max(porArea[area].maiorDias, dias);
+    });
+    const linhas = Object.values(porArea).sort((a, b) => b.n - a.n);
+    const tbody = document.querySelector('#tabelaAreas tbody');
+    document.getElementById('areasVazio').style.display = linhas.length ? 'none' : 'block';
+    tbody.innerHTML = linhas.map(l => `
+      <tr>
+        <td>${l.area}</td>
+        <td>${l.n}</td>
+        <td>${Math.round(l.somaDias / l.n)} dias</td>
+        <td>${l.maiorDias} dias</td>
+      </tr>
+    `).join('');
+  }
+
+  function render() {
+    montarAbas();
+    montarSlaToggle();
+    montarFiltroSituacao();
+    montarKpis();
+    montarSituacoes();
+    montarGrafico();
+    montarAreasPendentes();
+
+    const dados = linhasTabela();
+    const corpo = document.getElementById('corpo');
+    document.getElementById('vazio').style.display = dados.length ? 'none' : 'block';
+    corpo.innerHTML = dados.map(o => `
+      <tr>
+        <td>${formatarData(o.entrada)}</td>
+        <td>${o.numeroOficio || o.nome || '—'}</td>
+        <td>${o.numeroProcesso || '<span class="muted">—</span>'}</td>
+        <td>${o.orgaoEmissor || '<span class="muted">—</span>'}</td>
+        <td>${badge(o.situacao, SITUACAO_BADGE)}</td>
+        <td>${formatarData(o.prazoResposta)}<br>${badge(o.situacaoPrazo, PRAZO_BADGE)}</td>
+        <td class="clamp" title="${(o.resumoPedido || '').replace(/"/g, '&quot;')}">${o.resumoPedido || '<span class="muted">—</span>'}</td>
+        <td>${badge(o.tipoResposta)}${o.tipoRespostaManual ? ' <span class="muted" title="Definido manualmente pelo analista">✔ manual</span>' : ''}</td>
+        <td>${o.responsavel || '<span class="muted">—</span>'}</td>
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('busca').addEventListener('input', e => { estado.busca = e.target.value; render(); });
+  document.getElementById('filtroSituacao').addEventListener('change', e => { estado.situacao = e.target.value; render(); });
+  document.querySelectorAll('#slaToggle .pill').forEach(el => {
+    el.addEventListener('click', () => { estado.sla = el.dataset.sla; render(); });
+  });
+  document.querySelectorAll('#tabela thead th').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      if (estado.ordem === key) estado.ordemAsc = !estado.ordemAsc;
+      else { estado.ordem = key; estado.ordemAsc = true; }
+      render();
+    });
+  });
+
+  document.getElementById('subtitulo').textContent = `${OFICIOS.length} ofícios carregados`;
+  render();
+})();
+</script>
+
+</body>
+</html>

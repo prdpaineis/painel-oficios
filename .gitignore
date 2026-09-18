@@ -1,0 +1,17 @@
+# credenciais — nunca versionar
+.env
+*.env
+!.env.example
+
+# saida local para envio manual (nao publicar no Pages)
+painel_oficios_completo.html
+docs/painel_oficios_completo.html
+
+# pacote local original (conteudo dobrado no README.md)
+LEIA-ME.md
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
